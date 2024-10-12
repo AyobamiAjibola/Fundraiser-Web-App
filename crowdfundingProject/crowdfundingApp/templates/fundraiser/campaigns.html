@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block title %} Campaigns {% endblock  %}
+
+{% block content %}
+    <div class="fundraiser-wrapper">
+        <span class="mb-4" style="font-size: 3rem; font-weight: 700; color: var(--primary-color)">
+            Campaings
+        </span>
+        <div 
+            id="campaign-list" 
+            hx-get="{% url 'campaign-list' %}" 
+            hx-trigger="load" 
+            class="fundraiser-container"
+        ></div>
+    </div>
+{% endblock %}
+

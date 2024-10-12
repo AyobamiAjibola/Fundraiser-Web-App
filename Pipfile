@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+django-crispy-forms = "*"
+crispy-bootstrap5 = "*"
+pillow = "*"
+django-widget-tweaks = "*"
+django-cors-headers = "*"
+requests = "*"
+python-decouple = "*"
+django-livereload-server = "*"
+babel = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+
+[scripts]
+start = "python manage.py runserver"
+start-reload = "python manage.py livereload"
+make-migration = "python manage.py makemigrations"
+migrate = "python manage.py migrate"

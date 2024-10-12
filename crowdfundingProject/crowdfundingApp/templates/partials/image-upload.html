@@ -1,0 +1,158 @@
+<style>
+    .upload-container {
+        border: 2px dotted #ccc;
+        border-radius: 8px;
+        text-align: center;
+        width: auto;
+        margin: 20px auto;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .upload-container input[type="file"] {
+        display: none;
+    }
+    
+    .upload-container label {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 20%;
+        height: 25px;
+    }
+
+    .profile-image-container {
+        position: relative;
+        width: auto; /* Adjust as needed */
+        background-color: transparent;
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .file-info {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .file-info span {
+        display: block;
+    }
+</style>
+
+<div style="height: {{ height }}">
+    <div class="upload-container pt-2" id="image-wrapper-{{ inputId }}">
+        <div class="profile-image-container" 
+            style="
+                display: flex; 
+                justify-content: space-between; 
+                flex-direction: column;
+                width: 100%;
+                height: 100%;
+            "
+        >
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div style="
+                        display: flex; 
+                        flex-direction: column; 
+                        justify-content: center; 
+                        align-items: center;
+                    "
+                >
+
+                    <i class="bi bi-image-fill" style="font-size: 30px"></i>
+                    <p style="font-size: 14px">Upload a photo here.</p>
+                </div>
+                <label for="{{ inputId }}">
+                    Browse
+                </label>
+                
+                <input type="file" id="{{ inputId }}" accept="image/*" name="{{ input_name }}" onchange="previewImage(event)">
+                <div class="file-info" id="file-info">
+                    <span id="file-type-{{ inputId }}" style="font-size: 10px; font-weight: bold;">Type: N/A</span>
+                    <span id="file-size-{{ inputId }}" style="font-size: 10px; font-weight: bold;">Size: N/A</span>
+                </div>
+            </div>
+            <span style="font-size: 10px;">File should be in (png, jpeg or jpg) format</span>
+        </div>
+    </div>
+    <div id="image-preview-wrapper-{{ inputId }}" style="position: relative; display: none;">
+        <img 
+            id="image-preview-{{ inputId }}"
+            src="#" 
+            alt="Image Preview" 
+            style="max-height: {{ height }}; max-width: 100%;" 
+        />
+        <div style="
+                font-size: 30px; 
+                position: absolute; 
+                top: 6px; background-color: white; 
+                left: 10px;
+                border-radius: 50%;
+                width: 30px; height: 30px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+            " 
+            onClick="removeImage()"
+        >
+            <i 
+                class="bi bi-x" 
+                style="font-size: 30px; color: red;" 
+            >
+            </i>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('change', function(event) {
+
+        if (event.target && event.target.id === '{{ inputId }}') {
+            const file = event.target.files[0];
+            const fileType = file ? file.type : 'N/A';
+            const fileSize = file ? (file.size / 1024).toFixed(2) + ' KB' : 'N/A';
+            document.getElementById('file-type-{{ inputId }}').textContent = 'Type: ' + fileType;
+            document.getElementById('file-size-{{ inputId }}').textContent = 'Size: ' + fileSize;
+        }
+    });
+
+    {% comment %} function previewImage(event) {
+
+        const wrapper = document.getElementById('image-preview-wrapper-{{ inputId }}');
+        const output = document.getElementById('image-preview-{{ inputId }}');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            output.src = e.target.result;
+            wrapper.style.display = 'block';
+        };
+
+        if (event.target && event.target.id === '{{ inputId }}') {
+            const elem = document.getElementById('image-wrapper-{{ inputId }}');
+            elem.style.display = 'none';
+        }
+
+        
+    } {% endcomment %}
+
+    function removeImage() {
+        const wrapper = document.getElementById('image-preview-wrapper');
+        const output = document.getElementById('image-preview');
+        output.src = '';
+        wrapper.style.display = 'none';
+
+        var fileInput = document.getElementById('{{ inputId }}');
+        fileInput.value = '';
+        
+        const elem = document.getElementById('image-wrapper');
+        elem.style.display = 'block';
+    }
+</script>

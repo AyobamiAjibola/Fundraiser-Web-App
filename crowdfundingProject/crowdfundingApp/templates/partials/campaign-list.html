@@ -1,0 +1,104 @@
+{% if campaigns %}
+    {% for campaign in campaigns %}
+        <div class="fundraiser-card"
+            href="#" 
+            hx-get="{% url 'campaign' campaign.pk %}"
+            hx-target="#fund-dialog" 
+            data-bs-toggle="modal" 
+            data-bs-target="#fund-modal"
+        >
+            <div style="width: 100%; height: 60%">
+                <img src="{% if campaign.image %}
+                    {{ campaign.image.url }}
+                    {% else %}""
+                    {% endif %}"
+                    alt="Profile Image" 
+                    class="card-img" 
+                />
+            </div>
+            <div class="card-section">
+                <div style="height: 30%;">
+                    <div class="loc-wrapper">
+                        <p class="card-loc">
+                            <i class="bi bi-geo-alt-fill"></i> 
+                        </p>
+                        <p style="font-size: 14px; font-weight: 600;">
+                            {{ campaign.location }}
+                        </p>
+                    </div>
+
+                    <h4 class="firstN" style="font-weight: 700">
+                        {{ campaign.beneficiary }}
+                    </h4>
+                </div>
+
+                <span style="font-size: 13px; height: 40%; padding-top: 8px;" class="desc">
+                    {{ campaign.description }}
+                </span>
+
+                <div style="height: 30%; padding-top: 10px;">
+                    <div 
+                        class="progress" 
+                        role="progressbar" 
+                        aria-label="Example with label" 
+                        aria-valuenow={{ campaign.progressValue }} 
+                        aria-valuemin="0" 
+                        aria-valuemax={{ campaign.amountNeeded }}
+                        style="height: 0.7rem"
+                    >
+                        <div 
+                            class="progress-bar progress-bar-striped progress-bar-animated fundraiser-bar" 
+                            style="width: {{ campaign.progressValue }}%; height: 0.7rem"
+                        >
+                            {{ campaign.progressValue }}%
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <span style="font-size: 10px; font-weight: 600;">
+                            {{ campaign.amountRaised }} raised of {{ campaign.amountNeeded }}
+                        </span>
+                        <div class="d-flex items-center" style="gap: 1px">
+                            <span style="font-size: 10px; font-weight: 600;" class="fundraiser-fav-icon">
+                                <i class="bi bi-heart-fill"></i>
+                            </span>
+                            <span style="font-size: 10px; font-weight: 600;">
+                                {{ campaign.progressValue }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>You do not have any campaigns.</p>
+{% endif %}
+
+<div id="fund-modal" class="modal fade" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div id="fund-dialog" class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" hx-target="this"></div>
+</div>
+
+<script>
+    {% comment %} import { characterBreaker } from '../../../static/js/utils.js';
+    
+    const firstNames = document.querySelectorAll('.firstN');
+    const lastNames = document.querySelectorAll('.lastN');
+    const desc = document.querySelectorAll(".desc");
+
+    firstNames.forEach(function (firstNameElement) {
+        let text = firstNameElement.innerText;
+        firstNameElement.innerText = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    });
+
+    lastNames.forEach(function (lastNameElement) {
+        let text = lastNameElement.innerText;
+        lastNameElement.innerText = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    });
+
+    desc.forEach(function (description) {
+        let descr = description.innerText;
+        description.innerText = characterBreaker(descr, 15)
+    }); {% endcomment %}
+    
+</script>
+

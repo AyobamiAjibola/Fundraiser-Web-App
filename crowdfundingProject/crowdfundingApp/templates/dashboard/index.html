@@ -1,0 +1,392 @@
+{% extends "layout.html" %}
+{% load widget_tweaks %}
+
+{% block title %} Dashboard {% endblock  %}
+
+{% block content %}
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel" data-bs-backdrop="static">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasExampleLabel">New Campaign</h5>
+            <button 
+                type="button" 
+                class="btn-close" 
+                data-bs-dismiss="offcanvas"
+                aria-label="Close"
+                id="closeCanvasBtn"
+            ></button>
+        </div>
+        
+        <hr/>
+        {% if dashboard.active_campaign %}
+            <div class="d-flex justify-content-center px-3 py-2" style="background-color: var(--error-color)">
+                <span style="color: red; font-weight: 500; text-align: center; color: white;">
+                    You can't create a new campaign with an active fundraiser.
+                </span>
+            </div>
+        {% endif %}
+        <div class="offcanvas-body">
+            <form 
+                hx-post="{% url 'create-campaign' %}"
+                hx-target='#campaign-list' 
+                hx-swap="outerHTML" 
+                enctype="multipart/form-data"
+                hx-on="
+                    htmx:beforeRequest: (function() {
+                        document.getElementById('submit-text').style.display = 'none';
+                        document.getElementById('submit-spinner').style.display = 'inline-block';
+                    })();
+                    htmx:afterOnLoad: (function() { 
+                        document.getElementById('submit-text').style.display = 'inline-block';
+                        document.getElementById('submit-spinner').style.display = 'none';
+                        document.getElementById('doneForm').textContent = 'Done';
+                    })();
+                    htmx:afterRequest: (function() { 
+                        document.getElementById('submit-text').style.display = 'inline-block';
+                        document.getElementById('submit-spinner').style.display = 'none';
+                    })();"
+            >
+                {% csrf_token %}
+
+                <h5 style="font-weight: 700;" class="">
+                    Fundraising Details <span style="color: red;">*</span>
+                </h5>
+
+                {% include "partials/image-upload.html" with input_name="image" height="200px" inputId="campaign" %}
+
+                <div class="form-group mb-3 mt-3">
+                    <label>{{ form.title.label_tag }}</label>
+                    {% render_field form.title class="form-control" id="title" %}
+                </div>
+
+                <div class="form-group mb-3 mt-3">
+                    <label>{{ form.amountNeeded.label_tag }}</label>
+                    {% render_field form.amountNeeded class="form-control" id="amountNeeded" %}
+                    <span style="font-size: 12px; color: red;" id="amount-error"></span>
+                </div>
+
+                <div class="d-flex flex-row gap-2 mb-3">
+                    <div class="d-flex flex-column w-50">
+                        <label class="">State</label>
+                        <select id="state-data" class="form-select" name="state">
+                            <option selected disabled>Select a state</option>
+                        </select>
+                    </div>
+                    <div class="d-flex flex-column w-50">
+                        <label class="">LGA</label>
+                        <select id="lga-data" class="form-select" name="lga">
+                            <option selected disabled>Select an LGA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>{{ form.description.label_tag }}</label>
+                    <textarea id="id_description" name="description" class="form-control" rows="4" cols="50"></textarea>
+                </div>
+
+                <hr class="mt-4"/>
+
+                <h5 style="font-weight: 700;" class="mt-4 mb-3">
+                    Who are you fundraising for? <span style="color: red;">*</span>
+                </h5>
+
+                <div class="form-group mb-3 mt-3">
+                    <label>First Name</label>
+                    {% render_field form.firstName class="form-control" id="firstName" %}
+                </div>
+
+                <div class="form-group mb-3 mt-3">
+                    <label>Last Name</label>
+                    {% render_field form.lastName class="form-control" id="lastName" %}
+                </div>
+
+                <div class="form-group mb-3 ">
+                    <label>{{ form.address.label_tag }}</label>
+                    <textarea id="id_address" name="address" class="form-control" rows="4" cols="50"></textarea>
+                </div>
+
+                <div class="form-group mb-3 mt-3">
+                    <label>Account Number</label>
+                    {% render_field account_form.accountNumber class="form-control" id="accountNumber" %}
+                    <span style="font-size: 12px; color: red;" id="acc-num-error"></span>
+                </div>
+
+                <div class="d-flex flex-column w-100">
+                    <label class="">Bank</label>
+                    <select id="banks-data" class="form-select" name="bank">
+                        <option selected disabled>Select a bank</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-3 mt-3">
+                    <label>Account Name</label>
+                    <div class="position-relative">
+                        {% render_field account_form.accountName class="form-control" readonly=true id="accountName" %}
+                        <!-- Spinner element -->
+                        <div id="loading-indicator" class="spinner-border text-success position-absolute" role="status" style="top: 10%; left: 90%;">
+                        </div>
+                    </div>
+                    <span style="font-size: 12px; color: red;" id="acc-verify-error"></span>
+                </div>
+
+                <button type="submit" class="{% if dashboard.active_campaign %}btn btn-secondary{% else %}btn btn-success{% endif %}"
+                    id="submit-btn" {% if dashboard.active_campaign %}disabled{% endif %}
+                >
+                    <span id="submit-text">Save</span>
+                    <div id="submit-spinner" class="spinner-border spinner-border-sm text-light" style="display: none;" role="status"></div>
+                </button>
+                <button 
+                    type="button" 
+                    class="btn btn-danger"
+                    id="closeCanvasButton"
+                >Cancel</button>
+            </form>
+        </div>
+        <div id="doneForm"></div>
+    </div>
+
+    <div class="fundraiser-wrapper">
+        <div style="width: 20%;">
+            <button 
+                class="btn btns" 
+                type="button" 
+                aria-controls="offcanvasExample"
+                id="openCanvasButton"
+            >
+                Create A Campaign
+            </button>
+        </div>
+    </div>
+
+    <div 
+        id="campaign-list" 
+        hx-get="{% url 'campaign-list-table' %}" 
+        hx-trigger="load" 
+        class="fundraiser-table-container"
+    ></div>
+{% endblock  %}
+
+{% block scripts %}
+    <script type="module" defer>
+        import { stateLga } from '../../../static/js/utils.js';
+
+        const offcanvasElement = document.getElementById('offcanvasExample');
+        const offcanvas = new bootstrap.Offcanvas(offcanvasElement);
+        
+        function clearOptions() {
+            const options = bankSelect.querySelectorAll('.bank-option');
+            options.forEach(option => option.remove());
+        }
+
+        function clearOptionsState() {
+            const options = bankSelect.querySelectorAll('.state-option');
+            options.forEach(option => option.remove());
+        }
+
+        function clearOptionsLga() {
+            const options = bankSelect.querySelectorAll('.lga-option');
+            options.forEach(option => option.remove());
+        }
+
+        function closeCanva () {
+            offcanvas.hide();
+        }
+
+        function openCanva () {
+            offcanvas.show();
+        }
+
+        function capitalizeFirstLetter(string) {
+            if (!string) return '';
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("openCanvasButton").addEventListener("click", openCanva);
+            document.getElementById("closeCanvasButton").addEventListener("click", closeCanva);
+            document.getElementById("closeCanvasBtn").addEventListener("click", closeCanva);
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const doneDiv = document.getElementById("doneForm");
+            let observer;
+
+            offcanvasElement.addEventListener('shown.bs.offcanvas', function () {
+
+                // Create a new MutationObserver when offcanvas opens
+                observer = new MutationObserver(function(mutationsList) {
+                    for (const mutation of mutationsList) {
+                        if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                            if (doneDiv.textContent.trim() === "Done") {
+                                document.getElementById("title").value = '';
+                                document.getElementById("amountNeeded").value = '';
+                                document.getElementById("id_address").value = '';
+                                document.getElementById("id_description").value = '';
+                                document.getElementById("accountNumber").value = '';
+                                document.getElementById("accountName").value = '';
+                                document.getElementById("firstName").value = '';
+                                document.getElementById("lastName").value = '';
+                            }
+
+                            return closeCanva()
+                        }
+                    }
+                });
+
+                observer.observe(doneDiv, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+            });
+
+            // Optionally, handle the offcanvas close event to disconnect the observer
+            offcanvasElement.addEventListener('hidden.bs.offcanvas', function () {
+                console.log("Offcanvas is closed");
+                if (observer) {
+                    observer.disconnect();
+                }
+                doneDiv.textContent = ''
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const amountField = document.getElementById('amountNeeded');
+            const amountErrField = document.getElementById('amount-error');
+        
+            amountField.addEventListener('input', function() {
+
+                const amountValue = parseFloat(this.value);
+
+                if (!isNaN(amountValue) && amountValue < 0) {
+                    amountErrField.textContent = 'Amount cannot be a negative number.';
+                } else {
+                    amountErrField.textContent = '';
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const bankSelect = document.getElementById('banks-data');
+            const accountNumberField = document.getElementById("accountNumber");
+            const accountNameField = document.getElementById("accountName");
+            let bankData = [];
+            let accountNumberValue = '';
+            const accVerifyError = document.getElementById('acc-verify-error');
+            const accNumErr = document.getElementById('acc-num-error');
+            
+            function showLoadingState(isLoading) {
+                const loadingIndicator = document.getElementById('loading-indicator');
+
+                if (isLoading) {
+                    loadingIndicator.style.display = 'block';
+                } else {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            function populateOptions(bankData) {
+                bankData.forEach(bank => {
+                    let option = document.createElement('option');
+                    option.value = bank.slug;
+                    option.textContent = bank.name;
+                    option.classList.add('bank-option');
+                    bankSelect.appendChild(option);
+                });
+            }
+
+            showLoadingState(false);
+
+            if(accountNumberField.value === '') {
+                bankSelect.disabled = true;
+            }
+            accountNumberField.addEventListener('input', function() {
+                if (this.value.length > 10 || this.value.length < 10) {
+                    accountNameField.value = ''
+                    bankSelect.disabled = true;
+                    accNumErr.textContent = 'Invalid account number.'
+                } else {
+                    accountNumberValue = this.value;
+                    bankSelect.disabled = false;
+                    populateOptions(bankData);
+                    accNumErr.textContent = ''
+                }
+            });
+        
+            axios.get('/api/paystack-proxy/')
+                .then(response => {
+                    bankData = response.data.data;
+                    populateOptions(bankData);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        
+            bankSelect.addEventListener('change', function() {
+                const selectedSlug = this.value;
+                const selectedBank = bankData.find(bank => bank.slug === selectedSlug);
+                
+                if (accountNumberField.value.length === 10) {
+                    showLoadingState(true);
+                    if (selectedBank) {
+                        const payload = {
+                            bankCode: selectedBank.code,
+                            accountNumber: accountNumberValue
+                        }
+                        axios.post('/api/validate-account', payload)
+                            .then(response => {
+                                if(accountNameField) {
+                                    accountNameField.value = response.data.data.account_name;
+                                }
+                                showLoadingState(false);
+                                accVerifyError.textContent = ''
+                            })
+                            .catch(error => {
+                                console.error('Error:', error.response.data.error)
+                                accVerifyError.textContent = error.response.data.error
+                                showLoadingState(false);
+                                clearOptions()
+                            });
+                    } else {
+                        console.error('Bank not found');
+                        showLoadingState(false);
+                    }
+                } else {
+                    console.error('Please make sure the account number is valid');
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const stateSelect = document.getElementById('state-data');
+            const lgaSelect = document.getElementById('lga-data');
+
+            // Populate state dropdown
+            Object.keys(stateLga).forEach(state => {
+                let option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                option.classList.add('state-option');
+                stateSelect.appendChild(option);
+            });
+
+            // Handle state change to populate LGA dropdown
+            stateSelect.addEventListener('change', function() {
+                const selectedState = this.value;
+                const lgas = stateLga[selectedState];
+
+                // Clear previous options
+                lgaSelect.innerHTML = '<option selected>Select an LGA</option>';
+
+                // Populate LGA dropdown
+                lgas.forEach(lga => {
+                    let option = document.createElement('option');
+                    option.value = lga;
+                    option.textContent = lga;
+                    option.classList.add('lga-option');
+                    lgaSelect.appendChild(option);
+                });
+            });
+        });
+    </script>
+{% endblock  %}

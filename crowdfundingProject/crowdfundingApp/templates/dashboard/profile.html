@@ -1,0 +1,55 @@
+{% load widget_tweaks %}
+{% with WIDGET_ERROR_CLASS='is-invalid' %}
+{% load static %}
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h4 class='logout'>Profile Page</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+        <form method="POST" action="{% url 'profile' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% include "partials/image-upload.html" with input_name="image" height="200px" inputId="profile" %}
+            
+            <div class="form-group mb-3">
+                <label>{{ form.first_name.label_tag }}</label>
+                    {% render_field form.first_name class="form-control" value=profile.first_name %}
+            </div>
+
+            <div class="form-group mb-3">
+                <label>{{ form.last_name.label_tag }}</label>
+                    {% render_field form.last_name class="form-control" value=profile.last_name %}
+            </div>
+
+            <div class="form-group mb-3">
+                <label>{{ form.email.label_tag }}</label>
+                    {{ form.email.errors }}
+                    {% render_field form.email value=profile.email id="id_email" class="form-control" hx-post="/check_email_update/" hx-trigger="keyup" hx-swap="outerhtml" hx-target="#email-error" %}
+                <div id="email-error"></div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label>{{ form.state.label_tag }}</label>
+                    {% render_field form.state class="form-control" value=profile.state %}
+            </div>
+
+            <div class="form-group mb-3">
+                <label>{{ form.lga.label_tag }}</label>
+                    {% render_field form.lga class="form-control" value=profile.lga %}
+            </div>
+
+            <div class="form-group mb-3">
+                <label>{{ form.address.label_tag }}</label>
+                    {% comment %} {% render_field form.address class="form-control" value=profile.address rows="4" cols="50" %} {% endcomment %}
+                <textarea id="id_address" name="address" class="form-control" rows="4" cols="50">{{ profile.address }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+        </form>
+        {% endwith %}
+    </div>
+</div>
+

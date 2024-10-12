@@ -1,0 +1,274 @@
+:root {
+    --primary-color: #501078;
+    --error-color: red;
+    --text-color: #333333;
+    --background-color: #F1FCF7;
+    --hover-fund-card-bg-color: #F0F1F2;
+    --success-color: green;
+    --light-primary-color: #CAB7D6;
+}
+
+.logincontainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.btns {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.campaign-wrapper {
+    background-color: var(--background-color);
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.desc-section {
+    display: flex;
+    width: 100%;
+    gap: 16px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-top: 10px;
+}
+
+.firstN,
+.lastN {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.fundraiser-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 60px 80px 10px;
+    width: 100%;
+}
+
+.fundraiser-fav-icon {
+    color: red;
+}
+
+.fundraiser-bar {
+    background-color: var(--primary-color);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.card-section {
+    padding: 10px 10px;
+    display: flex;
+    height: 40%;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.card-loc {
+    color: var(--primary-color);
+    font-size: 12px;
+}
+
+.fundraiser-card {
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    width: calc(33.333% - 20px);
+    border-radius: 20px;
+    border: #dfe2e4 solid 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.cards-fundraiser {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    width: calc(33.333% - 50px);
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.update-campaign {
+    padding: 90px 200px 60px;
+}
+
+.cards-fundraiser-container {
+    /* padding: 90px 80px 10px; */
+    padding-bottom: 90px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fundraiser-card:hover {
+    background-color: var(--hover-fund-card-bg-color)
+}
+
+.likebtn:hover {
+    background-color: var(--light-primary-color)
+}
+
+.loc-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: -10px;
+}
+
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    display: block;
+}
+
+.fundraiser-wrapper {
+    padding: 30px 80px 40px;
+}
+
+.fundraiser-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.fundraiser-table-container {
+    padding: 20px 80px 40px;
+}
+
+.section-one {
+    height: 100vh;
+    width: 40vw;
+    background-color: var(--background-color);
+    padding: 20px;
+}
+
+.section-two {
+    height: 100vh;
+    width: 60vw;
+}
+
+.loginwrapper {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.error {
+    transition: opacity 1s ease-out;
+    margin-top: 5px;
+}
+
+.err {
+    color: red;
+    transition: all ease-in .5s
+}
+
+.success {
+    color: green;
+    transition: all ease-in .5s
+}
+
+.validation-error {
+    transition: opacity 1s ease-out;
+    color: red;
+    margin-top: -16px;
+}
+
+.error-error {
+    color: red;
+}
+
+.error-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 25px;
+}
+
+.error-success {
+    color: green;
+}
+
+.image-container {
+    position: relative;
+    width: 50px; /* Adjust as needed */
+    height: 50px; /* Adjust as needed */
+    background-color: transparent;
+}
+
+.profile-image-container {
+    position: relative;
+    width: auto; /* Adjust as needed */
+    background-color: transparent;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: center;
+}
+
+.profile-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.profile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    border: 1px solid #6c757d;
+}
+
+.profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    border: 1px dashed #6c757d;
+}
+
+.fallback-initials {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px; /* Adjust as needed */
+    background-color: #6c757d; /* Background color */
+    color: white;
+    border-radius: 50%;
+    display: none; /* Hide by default */
+}
+
+@media (min-width: 576px) {
+    
+}
+
+@media (min-width: 768px) {
+   
+}
+
+@media (min-width: 992px) {
+    
+}
+
+@media (min-width: 1200px) {
+    
+}
