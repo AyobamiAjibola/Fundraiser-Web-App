@@ -18,7 +18,9 @@ urlpatterns = [
     path('campaign-list/', CampaignList.as_view(), name='campaign-list'),
     # path('paystack/webhook/', views.paystack_webhook, name='paystack_webhook'),
     path('api/donate', views.donate, name='donate'),
-     path('api/verify-payment', views.verify_payment, name='verify-payment'),
+    path('api/verify-payment', views.verify_payment, name='verify-payment'),
+    path('api/like-campaign', views.like_campaign, name='like-campaign'),
+    path('api/update-status', views.toggleStatus, name='update-status'),
 ]
 
 protected_urlpatterns = [

@@ -1,11 +1,15 @@
 
-<div class="cards-fundraiser-container">
+<div class="cards-fundraiser-container mt-4">
     <div class="cards-fundraiser" style="background-color: var(--primary-color)">
         <span style="color: #fff; font-size: 3rem; font-weight: 800;">
             {{ dash_data.campaigns }}
         </span>
         <span style="font-size: 16px; font-weight: 700; color: #fff;">
-            Total No. of Campaigns
+            {% if dash_data.isSuperUser %} 
+                Total No. of Campaigns 
+            {% else %}
+                Your Campaigns 
+            {% endif %}
         </span>
     </div>
     <div class="cards-fundraiser" style="background-color: var(--success-color); padding-left: 10px; padding-right: 10px;">
@@ -13,7 +17,12 @@
             {{ dash_data.totalAmount }}
         </span>
         <span style="font-size: 16px; font-weight: 700; color: #fff;">
-            Amount Recieved
+            
+            {% if dash_data.isSuperUser %} 
+                Total Amount Recieved
+            {% else %}
+                Amount Recieved
+            {% endif %}
         </span>
     </div>
     <div class="cards-fundraiser" style="background-color: var(--error-color)">
@@ -34,88 +43,251 @@
     </div>
 {% endif %}
 
-{% if campaigns %}
-    <div>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Beneficiary</th>
-                    <th scope="col">Location</th>
-                    <th scope="col">Amount Needed</th>
-                    <th scope="col">Amount Raised</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for campaign in campaigns %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td> 
-                        <td>{{ campaign.title }}</td> 
-                        <td>{{ campaign.beneficiary }}
-                        <td>{{ campaign.location }}</td>
-                        <td>{{ campaign.amountNeeded }}
-                        <td>{{ campaign.amountRaised }}</td>
-                        <td>
-                            <span
-                                class="px-2 py-1 border rounded-pill"
-                                style="
-                                    font-size: 14px; 
-                                    font-weight: 500;
-                                    background-color: 
-                                    {% if campaign.status == "rejected" %}
-                                            var(--error-color)
-                                        {% elif campaign.status == "inactive" %}
-                                            var(--text-color)
-                                        {% elif campaign.status == "active" %}
-                                            var(--success-color)
-                                        {% elif campaign.status == "done" %}
-                                            var(--primary-color)
-                                    {% endif %};
-                                    color: white;
-                                "
-                            >
-                                {{ campaign.status }}
-                            </span>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 16px; align-items: center; justify-content: center;">
-                                <a 
-                                    style="font-size: 16px; color: var(--primary-color); font-weight: 600; cursor: pointer;"
-                                    href="{% url 'update_campaign' campaign.pk %}"
-                                >
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <span 
-                                    style="font-size: 16px; color: red; font-weight: 600; cursor: pointer;" 
-                                    hx-delete="{% url 'delete_campaign' campaign.pk %}"
-                                    hx-target="#campaign-list"
-                                    hx-confirm="Are you sure you want to delete?"
-                                >
-                                    <i class="bi bi-trash3-fill"></i>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% if dash_data.isSuperUser %}
+    <div
+        style="
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        "
+    >
+        <div class="tabs active-tab" data-tab="campaigns">
+            Camapigns
+        </div>
+        <div class="tabs" data-tab="payment-request">
+            Payment Request
+        </div>
     </div>
-{% else %}
-    <p>You do not have any campaigns.</p>
+    <hr/>
 {% endif %}
 
-<script>
-    //document.addEventListener('DOMContentLoaded', (event) => {
-        setTimeout(() => {
-            const message = document.getElementById('err-message');
-            message.style.opacity = '0';
+<div class="tab-content" id="payment-request-content" style="display: none;">
+    {% if payment_data %}
+        <div>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">First Name</th>
+                        <th scope="col">Last Name</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payment_data %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td> 
+                            <td>{{ payment.amount }}</td> 
+                            <td>{{ payment.firstName }}</td>
+                            <td>{{ payment.lastName }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a 
+                                        class="btn btn-secondary btn-sm dropdown-toggle {% if payment.status == 'done' %} disabled {% endif %}" 
+                                        href="#" role="button" data-bs-toggle="dropdown" 
+                                        aria-expanded="false" id="status-{{ payment.pk }}"
+                                    >
+                                        {{ payment.status }}
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li style="cursor: pointer;" class="payment-btn" data-payment-id="{{ payment.pk }}">
+                                            <a class="dropdown-item">
+                                                Done
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>You do not have any payment request.</p>
+    {% endif %}
+</div>
 
-            setTimeout(() => {
-                message.style.display = 'none';
-            }, 1000); 
-        }, 5000);
-    //});
+<div class="tab-content" id="campaigns-content">
+    {% if campaigns %}
+        <div>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Beneficiary</th>
+                        <th scope="col">Location</th>
+                        <th scope="col">Amount Needed</th>
+                        <th scope="col">Amount Raised</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campaign in campaigns %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td> 
+                            <td>{{ campaign.title }}</td> 
+                            <td>{{ campaign.beneficiary }}
+                            <td>{{ campaign.location }}</td>
+                            <td>{{ campaign.amountNeeded }}
+                            <td>{{ campaign.amountRaised }}</td>
+                            <td>
+                                {% if dash_data.isSuperUser %}
+
+                                    <div class="btn-group">
+                                        <a 
+                                            class="btn btn-secondary btn-sm dropdown-toggle" 
+                                            href="#" role="button" data-bs-toggle="dropdown" 
+                                            aria-expanded="false" id="status-{{ campaign.pk }}"
+                                        >
+                                            {{ campaign.status }}
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li style="cursor: pointer;" class="status-btn" data-campaign-id="{{ campaign.pk }}">
+                                                <a class="dropdown-item">
+                                                    {% if campaign.status == 'active' %}
+                                                        Deactivate
+                                                    {% else %}
+                                                        Activate
+                                                    {% endif %}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                {% else %}
+                                    <span
+                                        class="px-2 py-1 border rounded-pill"
+                                        style="
+                                            font-size: 14px; 
+                                            font-weight: 500;
+                                            background-color: 
+                                            {% if campaign.status == "rejected" %}
+                                                    var(--error-color)
+                                                {% elif campaign.status == "inactive" %}
+                                                    var(--text-color)
+                                                {% elif campaign.status == "active" %}
+                                                    var(--success-color)
+                                                {% elif campaign.status == "done" %}
+                                                    var(--primary-color)
+                                            {% endif %};
+                                            color: white;
+                                        "
+                                    >
+                                        {{ campaign.status }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 16px; align-items: center; justify-content: center;">
+                                    <a 
+                                        style="font-size: 16px; color: var(--primary-color); font-weight: 600; cursor: pointer;"
+                                        href="{% url 'update_campaign' campaign.pk %}"
+                                    >
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    {% if dash_data.isSuperUser %}
+                                        <span 
+                                            style="font-size: 16px; color: red; font-weight: 600; cursor: pointer;" 
+                                            hx-delete="{% url 'delete_campaign' campaign.pk %}"
+                                            hx-target="#campaign-list"
+                                            hx-confirm="Are you sure you want to delete?"
+                                        >
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>You do not have any campaigns.</p>
+    {% endif %}
+</div>
+
+<script defer>
+    document.querySelectorAll('.status-btn').forEach((button) => {
+        button.addEventListener('click', function () {
+            const campaignId = button.getAttribute('data-campaign-id');
+            const statusButton = document.getElementById(`status-${campaignId}`);
+            const currentStatus = statusButton.innerText.trim();
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+            const payload = {
+                status: newStatus,
+                campaignId: campaignId
+            };
+
+            axios.post('/api/update-status', payload)
+                .then(response => {
+                    // Update status text without reloading
+                    statusButton.innerText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    window.location.reload(true)
+                })
+                .catch(error => {
+                    console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                });
+        });
+    });
+
+    document.querySelectorAll('.payment-btn').forEach((button) => {
+        button.addEventListener('click', function () {
+            const paymentId = button.getAttribute('data-payment-id');
+            const statusButton = document.getElementById(`status-${paymentId}`);
+            const currentStatus = statusButton.innerText.trim().toLowerCase();
+            const newStatus = currentStatus === 'pending' ? 'done' : 'pending';  // Toggle status
+    
+            const payload = {
+                status: newStatus,
+                paymentId: paymentId
+            };
+            console.log(payload, 'payload')
+            /**axios.post('/api/update-status', payload)
+                .then(response => {
+                    // Update status text without reloading
+                    statusButton.innerText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    // Optionally reload the page
+                    window.location.reload(true);
+                })
+                .catch(error => {
+                    console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                });**/
+        });
+    });
+    
+
+    document.querySelectorAll('.tabs').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove 'active-tab' class from all tabs
+            document.querySelectorAll('.tabs').forEach(t => t.classList.remove('active-tab'));
+            
+            // Add 'active-tab' class to the clicked tab
+            this.classList.add('active-tab');
+            
+            // Hide all content sections
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Show the content associated with the clicked tab
+            const contentId = this.getAttribute('data-tab') + '-content';
+            document.getElementById(contentId).style.display = 'block';
+        });
+    });    
+
+    setTimeout(() => {
+        const message = document.getElementById('err-message');
+        message.style.opacity = '0';
+
+        setTimeout(() => {
+            message.style.display = 'none';
+        }, 1000); 
+    }, 5000);
 </script>

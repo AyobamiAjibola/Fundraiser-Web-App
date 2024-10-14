@@ -145,18 +145,34 @@
         <div id="doneForm"></div>
     </div>
 
-    <div class="fundraiser-wrapper">
-        <div style="width: 20%;">
+    {% if dashboard.isSuperUser %}
+        <div style="margin-bottom: 30px;"></div>
+    {% else %}
+        <div
+            style="
+                margin-top: 40px;
+                margin-left: 80px;
+            "
+        >
             <button 
                 class="btn btns" 
                 type="button" 
                 aria-controls="offcanvasExample"
                 id="openCanvasButton"
+                style="width: auto; margin-right: 7px;"
             >
                 Create A Campaign
             </button>
+            <button 
+                class="btn btns2" 
+                type="button" 
+                style="width: auto;"
+                onClick="window.location.href='{% url 'withdraw-funds' %}'"
+            >
+                Withdraw Funds
+            </button>
         </div>
-    </div>
+    {% endif %}
 
     <div 
         id="campaign-list" 
@@ -169,7 +185,7 @@
 {% block scripts %}
     <script type="module" defer>
         import { stateLga } from '../../../static/js/utils.js';
-
+        console.log('{{ dashboard.isSuperUser }}', 'dash')
         const offcanvasElement = document.getElementById('offcanvasExample');
         const offcanvas = new bootstrap.Offcanvas(offcanvasElement);
         

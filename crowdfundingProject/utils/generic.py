@@ -7,6 +7,12 @@ def currency_display(amount):
     """
     return format_currency(amount, 'NGN', locale='en_NG')
 
+def currency_display_donation(amount):
+    """
+    Format the amount as Nigerian Naira (NGN) currency without decimal places.
+    """
+    return f'₦{amount:,.0f}'
+
 def format_amount(amount, is_kobo=False):
     """
     Formats the amount as currency. If the amount is in kobo, converts to naira.
@@ -20,6 +26,20 @@ def format_amount(amount, is_kobo=False):
         return currency_display(converted_to_naira)
     
     return currency_display(amount)
+
+def format_amount_donation(amount, is_kobo=False):
+    """
+    Formats the amount as currency. If the amount is in kobo, converts to naira.
+    """
+    if amount is None:
+        return currency_display(0)
+    
+    if is_kobo:
+        # Convert kobo to naira
+        converted_to_naira = amount / 100
+        return currency_display(converted_to_naira)
+    
+    return currency_display_donation(amount)
 
 def calc_progress(amountRaised, amountNeeded):
     
@@ -53,6 +73,6 @@ def cal_total_amt(campaigns):
     for campaign in campaigns:
         amount = campaign.amountRaised or Decimal(0)
         total_amount += amount
-    return format_amount(total_amount)
+    return format_amount_donation(total_amount)
 
 

@@ -1,4 +1,5 @@
 {% load static %}
+{% comment %} {% load json_script %} {% endcomment %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -57,15 +58,15 @@
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                    <span style="font-size: 10px; font-weight: 600;">
+                    <span style="font-size: 12px; font-weight: 600;">
                         {{ campaign.amountRaised }} raised of {{ campaign.amountNeeded }}
                     </span>
                     <div class="d-flex items-center" style="gap: 1px">
-                        <span style="font-size: 10px; font-weight: 600;" class="fundraiser-fav-icon">
+                        <span style="font-size: 12px; font-weight: 600;" class="fundraiser-fav-icon">
                             <i class="bi bi-heart-fill"></i>
                         </span>
-                        <span style="font-size: 10px; font-weight: 600;">
-                            {{ campaign.progressValue }}
+                        <span style="font-size: 12px; font-weight: 600;">
+                            {{ campaign.likes }}
                         </span>
                     </div>
                 </div>
@@ -128,13 +129,40 @@
                         class="btn likebtn" 
                         type="button" 
                         style="
-                            border: 0.5px solid var(--primary-color);
+                            border: 
+                                {% if campaign.liked %}
+                                    0.5px solid var(--primary-color);
+                                {% else %}
+                                    0.5px solid var(--error-color);
+                                {% endif %}
+                            font-weight: 700;
                         "
+                        id="liked-btn"
+                        {% if campaign.liked %}disabled{% endif %}
                     >
-                        <span style="font-size: 14px; font-weight: 600;" class="fundraiser-fav-icon">
-                            <i class="bi bi-heart-fill"></i>
-                        </span>
-                        Like
+                        {% if campaign.liked %}
+                            <span 
+                                style="
+                                    font-size: 20px; 
+                                    font-weight: 600;
+                                    margin-right: 2px;
+                                    color: var(--primary-color);
+                                ">
+                                <i class="bi bi-hand-thumbs-up-fill"></i>
+                            </span>
+                            Liked
+                        {% else %}
+                            <span 
+                                style="
+                                    font-size: 20px; 
+                                    font-weight: 600;
+                                    margin-right: 2px;
+                                    color: red;
+                                ">
+                                <i class="bi bi-heart-fill"></i>
+                            </span>
+                            Like
+                        {% endif %}
                     </button>
                     <hr/>
                     <div
@@ -148,29 +176,77 @@
                         <span class=""
                             style="
                                 color: var(--primary-color);
-                                font-weight: 700
+                                font-weight: 700;
                             "
                         >
                             Donations:
                         </span>
 
-                        <div
-                            style="
-                                display: flex;
-                                flex-direction: column;
-                                gap: 1;
-                            "
-                        >
-                            <span
+                        {% if campaign.donations %}
+                            <div
                                 style="
-                                    color: var(--text-color);
-                                    font-size: 12px;
+                                    max-height: 120px;
+                                    overflow: scroll;
+                                    margin-top: 8px;
                                 "
                             >
-                                No donations yet.
-                            </span>
-                            
-                        </div>
+                            {% for donation in campaign.donations %}
+                                <div
+                                    style="
+                                        display: flex;
+                                        gap: 5px;
+                                        align-items: center;
+                                    "
+                                >
+                                    <span
+                                        style="
+                                            font-size: 12px;
+                                            width: 10%;
+                                            font-weight: 600;
+                                        "
+                                    >
+                                        {{ forloop.counter }}.
+                                    </span>
+                                    <span
+                                        style="
+                                            font-size: 12px;
+                                            width: 40%;
+                                            font-weight: 600;
+                                        "
+                                    >
+                                        {{ donation.name }}
+                                    </span>
+                                    <span
+                                        style="
+                                            font-size: 12px;
+                                            width: 40%;
+                                            font-weight: 600;
+                                        "
+                                    >
+                                        {{ donation.amount }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <div
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 1;
+                                "
+                            >
+                                <span
+                                    style="
+                                        color: var(--text-color);
+                                        font-size: 12px;
+                                    "
+                                >
+                                    No donations yet.
+                                </span>
+                                
+                            </div>
+                        {% endif %}
                         
                     </div>
                 </div>
@@ -194,7 +270,8 @@
     <script>
         const donationBtn = document.getElementById('donation-btn');
         const donationInput = document.getElementById('donation-input');
-
+        const likeButton = document.getElementById('liked-btn')
+        
         let inputVal;
 
         if (donationInput.value === '') {
@@ -214,24 +291,54 @@
             }
         });
 
-        donationBtn.addEventListener('click', function () { 
-            let isLoading = true
+        likeButton.addEventListener('click', function () {
+            const currentUrl = new URL(window.location.href);
+            axios.post('/api/like-campaign', { campaignId: "{{ campaign.pk }}" })
+                .then(response => {
+                    window.location.href = currentUrl;
+                })
+                .catch(error => {
+                    console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                })
+        })
+
+        donationBtn.addEventListener('click', function () {
+            if (!inputVal || inputVal < 500) {
+                console.error('Invalid amount. Please enter an amount greater than 500.');
+                return;
+            }
+        
+            let isLoading = true; 
+
+            donationBtn.disabled = isLoading;
+            donationBtn.innerText = 'Loading...';
+
             const payload = {
                 campaignId: "{{ campaign.pk }}",
                 amount: inputVal,
                 user: "{{ campaign.user }}"
-            }
-
+            };
+        
             axios.post('/api/donate', payload)
                 .then(response => {
-                    const authorizationUrl = response.data.data.authorizationUrl
-                    window.location.href = authorizationUrl;
-                    isLoading = false
+                    const authorizationUrl = response.data.data.authorizationUrl;
+        
+                    if (authorizationUrl) {
+                        window.location.href = authorizationUrl;
+                    } else {
+                        console.error('No authorization URL returned from the server.');
+                    }
+                    isLoading = false;
+                    donationBtn.disabled = isLoading;
+                    donationBtn.innerText = 'Donate'; 
                 })
                 .catch(error => {
-                    console.error('Error:', error.response.data.error)
+                    console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                    isLoading = false;
+                    donationBtn.disabled = isLoading;
+                    donationBtn.innerText = 'Donate'; 
                 });
-        })
+        });
         
     </script>
 </body>

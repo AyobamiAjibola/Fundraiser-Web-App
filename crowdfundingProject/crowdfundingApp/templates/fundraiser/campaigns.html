@@ -16,3 +16,30 @@
     </div>
 {% endblock %}
 
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script defer>
+       window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reference = urlParams.get('reference');
+            const currentUrl = new URL(window.location.href);
+
+            if (reference) {
+                axios.get(`/api/verify-payment?reference=${reference}`)
+                    .then(response => {
+                        currentUrl.search = '';
+                        window.history.replaceState({}, document.title, currentUrl); // without reload
+                        
+                        const campaignListDiv = document.getElementById('campaign-list');
+                        htmx.ajax('GET', '{% url "campaign-list" %}', campaignListDiv);
+                        
+                        console.log('Payment verification successful');
+                    })
+                    .catch(error => {
+                        console.error('Error verifying payment:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                    });
+            }
+        });
+    </script>
+{% endblock %}
+

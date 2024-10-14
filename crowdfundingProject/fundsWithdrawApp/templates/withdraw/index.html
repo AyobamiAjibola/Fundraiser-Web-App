@@ -1,0 +1,240 @@
+{% extends "layout.html" %}
+{% load widget_tweaks %}
+
+{% block title %} Funds Withdrawal {% endblock  %}
+
+{% block content %}
+    <div
+        style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+             background-color: var(--light-primary-color);
+        "
+    >
+        <div
+            style="
+                width: 40vw;
+                height: 50vh;
+                border: #dfe2e4 solid 1px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                background-color: white;
+                border-radius: 8px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                gap: 20px;
+            "
+        >
+            <span
+                style="
+                    font-size: 30px;
+                    font-weight: 900;
+                    color: var(--primary-color)
+                "
+            >
+                Withdraw Funds
+            </span>
+            {% if campaign %}
+            <div
+                style="
+                    display: flex;
+                    width: 80%;
+                    justify-content: space-between;
+                "
+            >
+                <div
+                    style="
+                        display: flex;
+                        flex-direction: column;
+                    "
+                >
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--success-color);
+                            font-size: 10px;
+                            margin-right: 3px;
+                        "
+                    >
+                        Amount Needed:
+                    </span>
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--success-color);
+                            font-size: 10px;
+                        "
+                    >
+                        {{ campaign.amountNeeded }}
+                    </span>
+                </div>
+
+                <div
+                    style="
+                        display: flex;
+                        flex-direction: column;
+                    "
+                >
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--primary-color);
+                            font-size: 10px;
+                            margin-right: 3px;
+                        "
+                    >
+                        Amount Raised:
+                    </span>
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--primary-color);
+                            font-size: 10px;
+                        "
+                    >
+                        {{ campaign.amountRaised }}
+                    </span>
+                </div>
+
+                <div
+                    style="
+                        display: flex;
+                        flex-direction: column;
+                    "
+                >
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--error-color);
+                            font-size: 10px;
+                            margin-right: 3px;
+                        "
+                    >
+                        Amount Withdrawn:
+                    </span>
+                    <span
+                        style="
+                            font-weight: 600;
+                            color: var(--error-color);
+                            font-size: 10px;
+                        "
+                    >
+                        {{ campaign.amountWithdrawn }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div
+                style="
+                    display: flex;
+                    flex-direction: column;
+                    width: 50%;
+                "
+            >
+                <input 
+                    type="number" 
+                    class="form-control border" 
+                    style="
+                        border-bottom-left-radius: 0;
+                        border-bottom-right-radius: 0;
+                        outline: none; box-shadow: none;
+                    "
+                    placeholder="Enter Amount"
+                    onfocus="this.style.boxShadow='none';"
+                    id="withdrawInput"
+                >
+                <button
+                    class="btn btn-success border" 
+                    style="
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                    "
+                    type="button"
+                    id="withdrawBtn"
+                >
+                    Withdraw
+                </button>
+            </div>
+
+            <span id="errMessage" class="err" style="font-size: 14px; font-weight: 700;"></span>
+            <span id="successMessage" class="success" style="font-size: 14px; font-weight: 700;"></span>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script defer>
+        const withdrawButton = document.getElementById('withdrawBtn');
+        const withdrawInput = document.getElementById('withdrawInput');
+        const errMessage = document.getElementById('errMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        let inputVal;
+
+        if (withdrawInput.value === '') {
+            withdrawButton.disabled = true;
+            withdrawButton.style.backgroundColor = "#333333";
+        }
+
+        withdrawInput.addEventListener('input', function () {            
+            inputVal = parseFloat(withdrawInput.value) || 0;
+
+            if (inputVal < 500 || inputVal < 0) {
+                withdrawButton.disabled = true;
+                withdrawButton.style.backgroundColor = "#333333";
+            } else {
+                withdrawButton.disabled = false;
+                withdrawButton.style.backgroundColor = "";
+            }
+        });
+
+        withdrawButton.addEventListener('click', function () {
+            const currentUrl = new URL(window.location.href);
+
+            if (!inputVal || inputVal < 500) {
+                console.error('Invalid amount. Please enter an amount greater than 500.');
+                return;
+            }
+        
+            let isLoading = true; 
+
+            withdrawButton.disabled = isLoading;
+            withdrawButton.innerText = 'Loading...';
+            
+            const payload = {
+                campaignId: "{{ campaign.pk }}",
+                amount: inputVal
+            };
+
+            axios.post('/api/withdraw-fund', payload)
+                .then(response => {
+                    isLoading = false;
+                    withdrawButton.disabled = isLoading;
+                    withdrawButton.innerText = 'Withdraw'; 
+                    successMessage.innerText = response.data.message || "Successful"
+                })
+                .catch(error => {
+                    console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
+                    isLoading = false;
+                    withdrawButton.disabled = isLoading;
+                    withdrawButton.innerText = 'Withdraw'; 
+                    errMessage.innerText = error.response ? error.response.data.error : 'An unexpected error occurred'
+                });
+
+            setTimeout(() => {
+                errMessage.style.opacity = '0';
+                successMessage.style.opacity = '0';
+                setTimeout(() => {
+                    errMessage.style.display = 'none';
+                    successMessage.style.display = 'none';
+                    window.location.reload(true)
+                }, 1000);
+                //window.location.href = currentUrl;
+            }, 3000);
+        });
+    </script>
+{% endblock %}

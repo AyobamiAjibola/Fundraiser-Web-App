@@ -25,12 +25,6 @@ def user_post_save_receiver_create_user(sender, instance, created, **kwargs):
 def user_post_save_receiver_update_user(sender, instance, **kwargs):
     instance.profile.save()
 
-    
-class Donation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='donations')
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f'{self.user} donated {self.amount} on {self.date}'  
     
@@ -40,10 +34,9 @@ class Account(models.Model):
     accountNumber = models.TextField(max_length=255, null=True, blank=True)
     bankCode = models.TextField(max_length=255, null=True, blank=True)
 
-
     def __str__(self):
-        return f'{self.accountName} {self.bank} {self.accountNumber} {self.bankCode}' 
-    
+        return f'{self.accountName} {self.bank} {self.accountNumber} {self.bankCode}'    
+
 class Crowdfunding(models.Model):
     # user = models.ManyToManyField(User, related_name='crowdfundings') THIS ALLOWS MANY USERS TO BE ASSOCIATED TO MANY CROWEDFUND AND VIS A VIS
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crowdfundings', null=True, blank=True) # with this one user can be associated with many crowedfund but on one crowdfund will associated to one user
@@ -52,11 +45,10 @@ class Crowdfunding(models.Model):
     status = models.TextField(max_length=255, null=False, blank=False, default='inactive')
     address = models.TextField(max_length=500, null=True, blank=True)
     image = models.ImageField(upload_to='images/fundraiser/', blank=True, null=True)
-    likes = models.ManyToManyField(User, related_name='liked_crowdfundings', blank=True)
-    donations = models.ManyToManyField(Donation, related_name='crowdfunding_donations', blank=True)
+    likes = models.TextField(blank=True, default="")
     amountNeeded = models.DecimalField(max_digits=10, decimal_places=2)
     amountWithdrawn = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    amountRaised = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    amountRaised = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=0)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -67,12 +59,17 @@ class Crowdfunding(models.Model):
     firstName = models.TextField(max_length=255, null=False, default='')
     lastName = models.TextField(max_length=255, null=False, default='')
     
+class Donation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='donations', null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateTimeField(auto_now_add=True)
+    crowdfunding = models.ForeignKey(Crowdfunding, related_name='donations', on_delete=models.DO_NOTHING, null=True) 
+    
 class Transaction(models.Model):
     reference = models.TextField(max_length=255, null=False)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.TextField(max_length=255, null=False)
     type = models.TextField(max_length=255, null=False)
-    serviceStatus = models.TextField(max_length=255, null=True)
     authorizationUrl = models.TextField(max_length=255, null=False)
     last4 = models.TextField(max_length=255, null=True)
     expMonth = models.TextField(max_length=255, null=True)
@@ -84,7 +81,8 @@ class Transaction(models.Model):
     brand = models.TextField(max_length=255, null=True)
     currency = models.TextField(max_length=255, null=True)
     paidAt = models.TextField(max_length=255, null=True)
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='transaction', null=True, blank=True)
+    # user = models.TextField(max_length=255, null=True)
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='transactions', null=True, blank=True)
     campaign = models.ForeignKey(Crowdfunding, on_delete=models.DO_NOTHING, related_name='campaignTransaction', null=False, blank=True)
     
 # user = User.objects.get(id=1)  # Get a specific user

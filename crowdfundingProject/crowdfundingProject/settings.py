@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crowdfundingApp",
+    "fundsWithdrawApp",
     "crispy_forms",
     "crispy_bootstrap5",
     "widget_tweaks",

@@ -9,7 +9,7 @@ from django.views import View
 from django.contrib import messages
 from django.http import HttpResponse
 import re
-from .models import Crowdfunding, Profile
+from .models import Crowdfunding, Profile, Donation, Transaction
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView as DjangoLoginView
@@ -20,14 +20,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decouple import config
 from django.views.generic import ListView
-from utils.generic import format_amount, calc_progress, character_breaker, cal_total_amt
+from utils.generic import format_amount, calc_progress, character_breaker, cal_total_amt, currency_display_donation
 from django.shortcuts import get_object_or_404
-from utils.constant import MESSAGES
-from django.core.exceptions import ObjectDoesNotExist
-from .models import Transaction
+from django.views.decorators.http import require_POST
+from fundsWithdrawApp.models import PaymentRequest
 
-import hmac
-import hashlib
 from django.http import JsonResponse
 from django.conf import settings
 
@@ -80,11 +77,40 @@ def modified_campaigns(campaigns):
             'amountRaised': format_amount(campaign.amountRaised),
             'amountNeeded': format_amount(campaign.amountNeeded),
             'progressValue': calc_progress(campaign.amountRaised, campaign.amountNeeded),
+            'likes': 0 if campaign.likes == '' else len(campaign.likes.split(','))
         }
         for campaign in campaigns
     ]
     
     return mod_campaigns
+
+def modified_payments(payments):
+    mod_payments = [
+        {
+            'firstName': f"{payment.user.first_name.capitalize()}",
+            'lastName': f"{payment.user.last_name.capitalize()}",
+            'amount': format_amount(payment.amount),
+            'status': payment.status,
+            'pk': payment.pk
+        }
+        for payment in payments
+    ]
+    
+    return mod_payments
+
+def modified_donations(donations):
+    mod_donations = [
+        {
+            'name': 'Anonymous' if not donation.user 
+                                else f"{character_breaker(donation.user.first_name.capitalize(), 9)}..." 
+                                    if len(donation.user.first_name.capitalize()) > 9 
+                                    else donation.user.first_name.capitalize(),
+            'amount': currency_display_donation(donation.amount)
+        }
+        for donation in donations
+    ]
+    
+    return mod_donations
 
 def dash_modified_campaigns(campaigns):
     mod_campaigns = [
@@ -356,10 +382,10 @@ def dashboard_view(request):
     user = request.user
     if user.is_authenticated:
         data = get_user_profile_data(user)
-        campaigns = user.crowdfundings.all()
+        # campaigns = user.crowdfundings.all()
         dashData = {
-            "active_campaign": True if len([campaign for campaign in campaigns if campaign.status == 'active']) > 0 else False,
-            "show": "show this"
+            # "active_campaign": True if len([campaign for campaign in campaigns if campaign.status == 'active']) > 0 else False,
+            "isSuperUser": True if request.user.is_superuser else False
         }
     else:
         data = {}
@@ -425,7 +451,7 @@ class CampaignList(ListView):
     context_object_name = 'campaigns'
 
     def get_queryset(self):
-        campaigns = Crowdfunding.objects.all()
+        campaigns = Crowdfunding.objects.filter(status='active')
         
         return modified_campaigns(campaigns)
 
@@ -436,7 +462,7 @@ class CampaignListTable(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        campaigns = user.crowdfundings.all()
+        campaigns = Crowdfunding.objects.all() if self.request.user.is_superuser else user.crowdfundings.all()
         return dash_modified_campaigns(campaigns)
 
     def get_context_data(self, **kwargs):
@@ -445,14 +471,20 @@ class CampaignListTable(ListView):
 
         # Calculate dash_data
         user = self.request.user
-        campaigns = user.crowdfundings.all()
+        campaigns = Crowdfunding.objects.all() if self.request.user.is_superuser else user.crowdfundings.all()
         dash_data = {
             'campaigns': len(campaigns),
             'totalAmount': cal_total_amt(campaigns),
             'rejected': len([campaign for campaign in campaigns if campaign.status == 'rejected']),
+            'isSuperUser': True if self.request.user.is_superuser else False
         }
+        
+        payments = PaymentRequest.objects.all()
+        mod_payment_request = modified_payments(payments)
 
         context['dash_data'] = dash_data
+        context['payment_data'] = mod_payment_request
+        
         return context
 
 def delete_campaign(request, pk):
@@ -555,7 +587,6 @@ def update_campaign_view(request, pk):
 
             # Check if the request is an HTMX request
             if request.headers.get('HX-Request'):
-                # Render the updated form with the new values
                 return render(request, 'dashboard/campaign.html')
 
         else:
@@ -576,10 +607,14 @@ def update_campaign_view(request, pk):
 
 def campaign_view(request, pk):
     campaign = get_object_or_404(Crowdfunding, pk=pk)
+    campaignArr = campaign.likes.split(',')
+    
+    donations = Donation.objects.filter(crowdfunding=campaign)
+    
+    mod_donations = modified_donations(donations)
 
     payload = {
         'pk': campaign.pk,
-        'user': campaign.user,
         'title': campaign.title,
         'status': campaign.status,
         'image': campaign.image,
@@ -589,6 +624,9 @@ def campaign_view(request, pk):
         'amountRaised': format_amount(campaign.amountRaised),
         'amountNeeded': format_amount(campaign.amountNeeded),
         'progressValue': calc_progress(campaign.amountRaised, campaign.amountNeeded),
+        'liked': str(request.user.pk) in campaignArr,
+        'likes': len(campaignArr),
+        'donations': mod_donations
     }
         
     return render(request, 'fundraiser/campaign.html', { 'campaign': payload })
@@ -602,9 +640,6 @@ def donate(request):
             amount = int(data.get('amount')) 
             user = request.user
 
-            transactionxx = Transaction.objects.all()
-            for transaction in transactionxx:
-                print(transaction.amount)
             # Ensure campaign exists
             try:
                 campaign = Crowdfunding.objects.get(pk=campaignId)
@@ -624,16 +659,22 @@ def donate(request):
                 "Authorization": f"{config('PAYSTACK_SK')}",
                 "Content-Type": "application/json",
             }
-            print(f"{user}, user")
-            email = user == "AnonymousUser" if 'anonymous@gmail.com' else user.email
+            
+            metadata = {
+                "cancel_action": f"{config('PAYSTACK_CB_URL')}transactions?status=cancelled"
+            }
+            
+            email = 'anonymous@gmail.com' if not user.is_authenticated else user.email
             data = {
                 "email": email,
-                "amount": amount * 100
+                "amount": amount * 100,
+                "callback_url": f"{config('PAYSTACK_CB_URL')}",
+                "metadata": metadata
             }
 
             # Make request to Paystack to initialize transaction
             response = requests.post('https://api.paystack.co/transaction/initialize', json=data, headers=headers)
-            print(f"{response}, => res")
+
             # Handle Paystack response
             if response.status_code != 200:
                 return JsonResponse({'error': 'Payment initialization failed'}, status=500)
@@ -641,17 +682,19 @@ def donate(request):
             res_data = response.json()
 
             if res_data.get('status') and res_data.get('data') and 'reference' in res_data['data']:
+                authorization_url = res_data['data']['authorization_url']
+                
                 transaction = Transaction(
-                    user= user == "AnonymousUser" if None else user,
+                    user = None if not user.is_authenticated else user,#None if user == "AnonymousUser" else user.pk,
                     amount=amount,
                     reference=res_data['data']['reference'],
-                    status=res_data['status'],
-                    campaign=campaign
+                    campaign=campaign,
+                    type="PAYMENT",
+                    authorizationUrl=authorization_url
                 )
+                
                 transaction.save()
 
-                # Get the authorization URL
-                authorization_url = res_data['data']['authorization_url']
                 return JsonResponse({'data': {'authorizationUrl': authorization_url}}, status=200)
 
             # If there's an issue with Paystack response
@@ -669,19 +712,136 @@ def donate(request):
 @csrf_exempt
 def verify_payment(request):
     ref = request.GET.get('reference')
+    user = request.user
+    
+    if not ref:
+        return JsonResponse({'error': 'Payment reference is required'}, status=400)
+
+    try:
+        transaction = Transaction.objects.get(reference=ref)
+    except Transaction.DoesNotExist:
+        return JsonResponse({'error': 'Transaction not found'}, status=404)
+    
+    campaign = Crowdfunding.objects.get(pk=transaction.campaign.pk)
+    
     headers = {
         "Authorization": f"{config('PAYSTACK_SK')}",
     }
+
+    # timeout = httpx.Timeout(connect=10.0, read=20.0)
+    # async with httpx.AsyncClient(timeout=timeout) as client:
+    #     response = await client.get(f'https://api.paystack.co/transaction/verify/{ref}', headers=headers)
+    # res_data = response.json()
+    
     response = requests.get(f'https://api.paystack.co/transaction/verify/{ref}', headers=headers)
     res_data = response.json()
 
+    response_data = res_data['data']
+
     if res_data['status']:
-        # Payment is successful
+        
+        donation = Donation(
+            user= None if not user.is_authenticated else user,
+            crowdfunding = campaign,
+            date=response_data['paid_at'],
+            amount=transaction.amount
+        )
+        amount_raised = 0 if campaign.amountRaised is None else campaign.amountRaised
+
+        campaignPayload = {
+            "amountRaised": amount_raised  + transaction.amount
+        }
+
+        payload = {
+            "status": response_data['status'],
+            "channel": response_data['authorization']['channel'],
+            "cardType": response_data['authorization']['card_type'],
+            "bank": response_data['authorization']['bank'],
+            "last4": response_data['authorization']['last4'],
+            "expMonth": response_data['authorization']['exp_month'],
+            "expYear": response_data['authorization']['exp_year'],
+            "countryCode": response_data['authorization']['country_code'],
+            "brand": response_data['authorization']['brand'],
+            "currency": response_data['currency'],
+            "paidAt": response_data['paid_at'],
+            "type": transaction.type
+        }
+        
+        for key, value in payload.items():
+            setattr(transaction, key, value)
+            
+        for key, value in campaignPayload.items():
+            setattr(campaign, key, value)
+
+        transaction.save()
+        donation.save()
+        campaign.save()
+        
         return JsonResponse({'message': 'Payment successful', 'data': res_data['data']}, status=200)
     else:
         # Payment failed
         return JsonResponse({'error': res_data['message']}, status=400)
 
+@csrf_exempt
+@require_POST
+def like_campaign(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'You are not authenticated.'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        campaign_id = data.get("campaignId")
+
+        try:
+            campaign = Crowdfunding.objects.get(pk=campaign_id)
+        except Crowdfunding.DoesNotExist:
+            return JsonResponse({'error': 'Campaign not found'}, status=404)
+
+        campaignArr = campaign.likes.split(",") if campaign.likes else []
+        if str(request.user.pk) not in campaignArr:
+            campaignArr.append(str(request.user.pk))
+        else:
+            return JsonResponse({'message': 'You already liked this campaign.'}, status=200)
+
+        # Update the likes field
+        campaign.likes = ",".join(campaignArr)
+        campaign.save()
+
+        return JsonResponse({'message': 'Successfully liked campaign.'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
+    
+@csrf_exempt
+@require_POST
+def toggleStatus(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'You are not authorized.'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+        status = data.get("status")
+        campaignId = int(data.get("campaignId"))
+
+        try:
+            campaign = Crowdfunding.objects.get(pk=campaignId)
+        except Crowdfunding.DoesNotExist:
+            return JsonResponse({'error': 'Campaign not found'}, status=404)
+        
+        campaignPayload = {
+            "status": status
+        }
+        
+        for key, value in campaignPayload.items():
+            setattr(campaign, key, value)
+            
+        campaign.save()
+        
+        return JsonResponse({'message': 'Successfully updated status.'}, status=200)
+        
+    except Exception as e:
+        return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
+        
 
 # @csrf_exempt
 # def paystack_webhook(request):
