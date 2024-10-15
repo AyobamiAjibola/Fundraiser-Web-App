@@ -1,8 +1,122 @@
 {% extends "layout.html" %}
 {% load widget_tweaks %}
 
-{% block title %} Create Campaign {% endblock  %}
+{% block title %} Home {% endblock  %}
 
 {% block content %}
-    <div>Home page</div>
+    <div style="display: flex; justify-content: center; align-items-center; background-color: #EDE7F1; height: 100vh;">
+        <div 
+            style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                border-radius: 10px;
+                width: 50vw;
+                height: 80vh;
+                margin-top: 30px;
+                padding: 20px;
+                background-color: white;
+            "
+        >
+            <div
+                style="
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                "
+            >
+                <h1
+                    style="
+                        color: var(--primary-color);
+                        font-weight: 700;
+                    "
+                >
+                    Welcome!
+                </h1>
+                <span
+                    style="
+                        font-weight: 500;
+                        margin-top: -10px;
+                        margin-bottom: 20px;
+                        font-size: 20px;
+                    "
+                >
+                    Empowering Communities, One Fundraiser at a Time.
+                </span>
+            </div>
+            <span
+                style="
+                    font-size: 16px;
+                    text-align: center;
+                "
+            >
+                We believe in the power of collective action to bring about 
+                meaningful change. Whether you're raising funds for a personal 
+                cause, supporting a community project, or championing a charity, 
+                our platform makes it easy for you to create, manage, and promote 
+                your fundraiser, all in one place.
+            </span>
+
+            <div
+                style="
+                    display: flex;
+                    justify-content: center;
+                    margin-top: 50px;
+                    gap: 12px;
+                "
+            >
+                <a
+                    style="
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        width: 150px;
+                        border-radius: 5px;
+                        padding-top: 5px;
+                        padding-bottom: 5px;
+                        border: 1px solid var(--primary-color);
+                        height: auto;
+                    "
+                    class="login-link"
+                    href="{% if profile %}{% url 'campaign' %}{% else %}{% url 'login' %}{% endif %}"
+                >
+                    <span
+                        style="font-weight: 600; color: var(--primary-color); font-size: 14px;"
+                    >
+                        Create Campaign
+                    </span>
+                </a>
+                <a
+                    style="
+                        display: flex;
+                        gap: 5px;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        width: 150px;
+                        border-radius: 5px;
+                        padding-top: 5px;
+                        padding-bottom: 5px;
+                        height: auto;
+                    "
+                    class="home-link"
+                    href="{% url 'campaigns' %}"
+                >
+                    <span
+                        style="font-size: 14px; color: white; font-weight: 600;"
+                    >
+                        View Campaigns
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
 {% endblock %}

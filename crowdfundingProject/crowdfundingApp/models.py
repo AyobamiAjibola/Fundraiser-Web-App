@@ -63,7 +63,7 @@ class Donation(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='donations', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateTimeField(auto_now_add=True)
-    crowdfunding = models.ForeignKey(Crowdfunding, related_name='donations', on_delete=models.DO_NOTHING, null=True) 
+    crowdfunding = models.ForeignKey(Crowdfunding, related_name='donations', on_delete=models.DO_NOTHING) 
     
 class Transaction(models.Model):
     reference = models.TextField(max_length=255, null=False)
@@ -81,7 +81,6 @@ class Transaction(models.Model):
     brand = models.TextField(max_length=255, null=True)
     currency = models.TextField(max_length=255, null=True)
     paidAt = models.TextField(max_length=255, null=True)
-    # user = models.TextField(max_length=255, null=True)
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='transactions', null=True, blank=True)
     campaign = models.ForeignKey(Crowdfunding, on_delete=models.DO_NOTHING, related_name='campaignTransaction', null=False, blank=True)
     

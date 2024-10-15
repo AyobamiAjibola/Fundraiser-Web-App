@@ -249,7 +249,7 @@
                 paymentId: paymentId
             };
             console.log(payload, 'payload')
-            /**axios.post('/api/update-status', payload)
+            axios.post('/api/change-status', payload)
                 .then(response => {
                     // Update status text without reloading
                     statusButton.innerText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
@@ -258,7 +258,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error.response ? error.response.data.error : 'An unexpected error occurred');
-                });**/
+                });
         });
     });
     

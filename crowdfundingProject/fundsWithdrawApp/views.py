@@ -32,6 +32,38 @@ def fundWithdraw(request):
         'profile': data,
         "campaign": campaign_data
     })
+
+@csrf_exempt
+@require_POST
+def changeStatus(request):
+    try:
+        data = json.loads(request.body)
+        paymentId = int(data.get("paymentId"))
+        status = data.get("status")
+
+        try:
+            paymentRequest = PaymentRequest.objects.get(pk=paymentId)
+        except PaymentRequest.DoesNotExist:
+            return JsonResponse({'error': 'Payment not found'}, status=404)
+        
+        paymentRequestPayload = {
+            "status": status
+        }
+        
+        for key, value in paymentRequestPayload.items():
+            setattr(paymentRequest, key, value)
+
+        paymentRequest.save()
+        
+        return JsonResponse({'message': 'Successfully changed status.'}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
+
+
     
 @csrf_exempt
 @require_POST
